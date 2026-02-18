@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh" class="mdui-theme-dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>赛博粒子Console</title>
+    <link rel="stylesheet" href="https://unpkg.com/mdui@2/mdui.css">
+    <script src="https://unpkg.com/mdui@2/mdui.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <style>
+        /* === 布局框架 === */
+        body {
+            margin: 0; padding: 0;
+            width: 100vw; height: 100vh;
+            display: flex; 
+            overflow: hidden; 
+            background-color: rgb(var(--mdui-color-surface));
+            color: rgb(var(--mdui-color-on-surface));
+            font-family: 'Roboto', sans-serif;
+        }
+
+        /* --- 左侧边栏 --- */
+        .sidebar {
+            width: 260px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background-color: rgb(var(--mdui-color-surface-container-low));
+            border-right: 1px solid rgb(var(--mdui-color-outline-variant));
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .drag-handle {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            padding-left: 20px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: rgb(var(--mdui-color-primary));
+            background: rgb(var(--mdui-color-surface-container-high));
+            -webkit-app-region: drag;
+            -webkit-user-select: none;
+            cursor: grab;
+        }
+
+        /* --- 右侧主内容 --- */
+        .main-wrapper {
+            flex: 1;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
+        }
+
+        /* 页面容器 */
+        .page {
+            display: none; /* 默认隐藏 */
+            flex-direction: column;
+            height: 100%;
+            padding: 30px;
+            box-sizing: border-box;
+            overflow-y: auto; /* 页面内部允许滚动 */
+        }
+        .page.active { display: flex; } /* 激活时显示 */
+
+        /* --- 组件样式微调 --- */
+        
+        /* 状态卡片 */
+        .status-card {
+            background-color: rgb(var(--mdui-color-surface-container));
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgb(var(--mdui-color-outline-variant));
+        }
+
+        /* 日志终端 */
+        #log-box {
+            margin-top: 20px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            height: 250px; /* 固定高度 */
+            overflow-y: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+            color: #00ff9d;
+        }
+        .log-line { border-bottom: 1px solid #222; padding: 2px 0; }
+
+        /* 编辑器全屏适配 */
+        #editor-page-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #editor-container {
+            flex: 1; /* 占满剩余空间 */
+            border: 1px solid rgb(var(--mdui-color-outline));
+            border-radius: 8px;
+            margin-top: 10px;
+            position: relative;
+        }
+        #ace-editor { 
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
+        }
+
+        /*公告 Markdown 样式适配*/
+        #announce-content h1, #announce-content h2, #announce-content h3 {
+            margin-top: 10px; margin-bottom: 8px; color: rgb(var(--mdui-color-secondary));
+        }
+        #announce-content p { margin-bottom: 8px; }
+        #announce-content ul { padding-left: 20px; margin-bottom: 8px; }
+        #announce-content li { margin-bottom: 4px; }
+        #announce-content blockquote {
+            border-left: 4px solid rgb(var(--mdui-color-outline));
+            background: rgba(255,255,255,0.05);
+            margin: 10px 0; padding: 8px 12px;
+            color: rgb(var(--mdui-color-on-surface-variant));
+            font-style: italic;
+        }
+        #announce-content strong { color: rgb(var(--mdui-color-tertiary)); }
+        #announce-content a { color: rgb(var(--mdui-color-primary)); text-decoration: none; border-bottom: 1px dashed; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="drag-handle">
+            <mdui-icon name="hub" style="margin-right: 10px;"></mdui-icon>
+            赛博粒子控制台
+        </div>
+
+        <mdui-list style="padding: 10px;">
+            <mdui-list-item rounded href="javascript:;" onclick="navTo('home')" active id="menu-home">
+                <mdui-icon slot="icon" name="dashboard"></mdui-icon>系统概览
+            </mdui-list-item>
+            
+            <mdui-list-item rounded href="javascript:;" onclick="navTo('editor')" id="menu-editor">
+                <mdui-icon slot="icon" name="code"></mdui-icon>代码编辑
+            </mdui-list-item>
+
+            <mdui-divider style="margin: 15px 0;"></mdui-divider>
+
+            <mdui-list-item rounded href="javascript:;" onclick="quit()" style="color: rgb(var(--mdui-color-error));">
+                <mdui-icon slot="icon" name="power_settings_new"></mdui-icon>退出系统
+            </mdui-list-item>
+        </mdui-list>
+    </div>
+
+    <div class="main-wrapper">
+        
+        <div id="page-home" class="page active">
+            
+            <mdui-card id="announce-card" style="width: 100%; margin-bottom: 24px; display: none; border: 1px solid rgb(var(--mdui-color-secondary)); background: rgb(var(--mdui-color-surface-container-low));">
+                <div style="padding: 16px 24px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                        <mdui-icon name="campaign" style="color: rgb(var(--mdui-color-secondary)); margin-right: 8px;"></mdui-icon>
+                        <div id="announce-title" style="font-size: 1.1rem; font-weight: bold; color: rgb(var(--mdui-color-secondary));">
+                            获取中...
+                        </div>
+                    </div>
+                    <mdui-divider></mdui-divider>
+                    <div id="announce-content" style="margin-top: 16px; opacity: 0.9; line-height: 1.6; font-size: 0.95rem;"></div>
+                </div>
+            </mdui-card>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h1>服务状态</h1>
+                <mdui-chip id="status-badge" variant="filter" icon="cancel">已停止</mdui-chip>
+            </div>
+
+            <div class="status-card">
+                <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                    <div style="flex: 1;">
+                        <h2 style="margin: 0; font-size: 1.2rem;">Core Server (localhost)</h2>
+                        <div style="opacity: 0.6; margin-top: 5px;">Port: 8001 | Protocol: HTTP</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <mdui-button id="btn-start" onclick="toggleServer(true)">
+                        <mdui-icon slot="icon" name="play_arrow"></mdui-icon>启动
+                    </mdui-button>
+                    <mdui-button id="btn-stop" variant="outlined" onclick="toggleServer(false)" disabled>
+                        <mdui-icon slot="icon" name="stop"></mdui-icon>停止
+                    </mdui-button>
+                    <div style="flex: 1;"></div>
+                    <mdui-button variant="text" onclick="openBrowser()">
+                        浏览器打开 <mdui-icon slot="icon" name="open_in_new"></mdui-icon>
+                    </mdui-button>
+                </div>
+                
+                <mdui-linear-progress id="loading" style="margin-top: 20px; display: none;"></mdui-linear-progress>
+            </div>
+
+            <h3 style="margin-top: 30px;">系统日志</h3>
+            <div id="log-box">
+                <div class="log-line">--- 等待指令 ---</div>
+            </div>
+        </div>
+
+        <div id="page-editor" class="page">
+            <div id="editor-page-content">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin: 0;">index.html</h2>
+                    <mdui-button variant="filled" onclick="saveCode()">
+                        <mdui-icon slot="icon" name="save"></mdui-icon>保存更改
+                    </mdui-button>
+                </div>
+                
+                <div id="editor-container">
+                    <div id="ace-editor"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let editor;
+        let pyApi = null;
+
+        //初始化
+        window.addEventListener('pywebviewready', function() {
+            pyApi = window.pywebview.api;
+            addLog("系统连接成功");
+            toggleServer(true); // 自动启动
+        });
+
+        window.onload = function() {
+            // Ace Editor 初始化
+            editor = ace.edit("ace-editor");
+            editor.setTheme("ace/theme/twilight");
+            editor.session.setMode("ace/mode/html");
+            editor.setFontSize(14);
+            
+            // 解决 Flex 布局下编辑器不显示的问题
+            new ResizeObserver(() => editor.resize()).observe(document.getElementById('editor-container'));
+
+            // ✨✨✨ 启动时获取公告 ✨✨✨
+            fetchAnnouncement();
+        };
+
+        // --- 云端公告逻辑 ---
+        async function fetchAnnouncement() {
+            const API_URL = "https://api.xn--c5w24w.cn/api.php?project=lizi"; 
+            
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error("网络请求失败");
+                
+                const data = await response.json();
+                
+                // 如果后端返回 show=true
+                if (data.show) {
+                    const card = document.getElementById('announce-card');
+                    const title = document.getElementById('announce-title');
+                    const content = document.getElementById('announce-content');
+
+                    // 设置标题
+                    title.innerText = data.title;
+                    
+                    // 解析 Markdown
+                    content.innerHTML = marked.parse(data.content);
+                    
+                    // 显示卡片动画
+                    card.style.display = 'block';
+                    card.animate([
+                        { opacity: 0, transform: 'translateY(-20px)' },
+                        { opacity: 1, transform: 'translateY(0)' }
+                    ], { duration: 400, easing: 'ease-out' });
+                    
+                    addLog("公告数据已更新");
+                }
+            } catch (error) {
+                console.warn("公告加载失败:", error);
+                // 仅在控制台显示
+            }
+        }
+
+        //导航
+        function navTo(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('mdui-list-item').forEach(i => i.removeAttribute('active'));
+            
+            document.getElementById(`page-${id}`).classList.add('active');
+            document.getElementById(`menu-${id}`).setAttribute('active', '');
+
+            if(id === 'editor') loadCode();
+        }
+        //逻辑控制 
+        async function toggleServer(on) {
+            if(!pyApi) return;
+            
+            const loading = document.getElementById('loading');
+            if(loading) loading.style.display = 'block';
+            
+            try {
+                const res = on ? await pyApi.start_server() : await pyApi.stop_server();
+                
+                if(res) {
+                    updateUI(on);
+                    if(on) {
+                        mdui.snackbar({
+                            message: "服务启动成功", 
+                            placement: "top",
+                            closeable: true
+                        });
+                    } else {
+                        mdui.snackbar({
+                            message: "服务已停止", 
+                            placement: "top",
+                            closeable: true
+                        });
+                    }
+                } else {
+                    mdui.snackbar({
+                        message: "操作失败，请检查日志", 
+                        placement: "top"
+                    });
+                }
+            } catch (e) {
+                addLog("API Error: " + e);
+            } finally {
+                if(loading) loading.style.display = 'none';
+            }
+        }
+
+        function updateUI(isRunning) {
+            const badge = document.getElementById('status-badge');
+            document.getElementById('btn-start').disabled = isRunning;
+            document.getElementById('btn-stop').disabled = !isRunning;
+
+            if(isRunning) {
+                badge.innerHTML = "运行中";
+                badge.setAttribute('variant', 'suggestion');
+                badge.setAttribute('icon', 'check_circle');
+            } else {
+                badge.innerHTML = "已停止";
+                badge.setAttribute('variant', 'filter');
+                badge.setAttribute('icon', 'cancel');
+            }
+        }
+
+        async function loadCode() {
+            if(pyApi) {
+                const txt = await pyApi.read_index();
+                editor.setValue(txt, -1);
+            }
+        }
+
+        async function saveCode() {
+            if(pyApi) {
+                const txt = editor.getValue();
+                await pyApi.save_index(txt);
+                mdui.snackbar({message: "保存成功", placement: "top"});
+            }
+        }
+
+        function openBrowser() {
+            if(pyApi) pyApi.open_browser();
+        }
+
+        function quit() {
+            if(pyApi) pyApi.quit_app();
+        }
+
+        //日志
+        window.addLog = function(msg) {
+            const box = document.getElementById('log-box');
+            const div = document.createElement('div');
+            div.className = 'log-line';
+            div.innerText = msg;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
+    </script>
+</body>
+</html>

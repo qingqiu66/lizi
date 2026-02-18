@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
@@ -65,37 +64,39 @@
         
         /* ThreeJS Canvas */
         canvas[data-engine="three.js"] { position: fixed; top: 0; left: 0; z-index: 0; }
-        /* Github 悬浮按钮 毛玻璃风格 */
-        .github-link {
-            position: fixed; bottom: 30px; right: 30px; z-index: 90;
-            width: 50px; height: 50px;
-            background: rgba(0, 0, 0, 0.6); /* 半透明黑底 */
-            border: 1px solid rgba(0, 243, 255, 0.3); /* 青色微光边框 */
-            border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            backdrop-filter: blur(5px); /* 毛玻璃 */
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
-            transition: all 0.3s ease;
+        /* GitHub 毛玻璃按钮 */
+        #github-link {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            z-index: 50;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
             cursor: pointer;
+            transition: all 0.3s ease;
             text-decoration: none;
         }
-        
-        /* 悬停时高亮效果 */
-        .github-link:hover {
+        #github-link:hover {
             background: rgba(0, 243, 255, 0.15);
-            border-color: #00f3ff;
-            box-shadow: 0 0 25px rgba(0, 243, 255, 0.6);
-            transform: scale(1.1) rotate(360deg); /* 轻微放大并旋转 */
+            border-color: rgba(0, 243, 255, 0.6);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+            transform: translateY(-3px);
         }
-        
-        .github-link svg {
-            width: 28px; height: 28px;
-            fill: rgba(255, 255, 255, 0.8);
-            transition: fill 0.3s;
+        #github-link svg {
+            width: 26px;
+            height: 26px;
+            fill: rgba(255, 255, 255, 0.7);
+            transition: fill 0.3s ease;
         }
-        
-        .github-link:hover svg {
-            fill: #ffffff; /* 悬停变纯白 */
+        #github-link:hover svg {
+            fill: #00f3ff;
         }
     </style>
 
@@ -134,9 +135,9 @@
     [ SYSTEM ] <span id="status-text" class="highlight">WAITING...</span><br>
     🖐 张手 = 粒子爆发 | ✊ 握拳 = 聚合显示
 </div>
-<a href="https://github.com/qingqiu66/lizi" target="_blank" class="github-link" aria-label="View on GitHub">
-    <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
-        <path d="M512 12.672c-282.88 0-512 229.248-512 512 0 226.261 146.688 418.133 350.08 485.419 25.6 4.736 34.987-11.115 34.987-24.619 0-12.16-0.427-44.373-0.683-87.04-142.421 30.891-172.459-68.693-172.459-68.693-23.296-59.179-56.832-74.923-56.832-74.923-46.464-31.744 3.52-31.104 3.52-31.104 51.413 3.627 78.507 52.779 78.507 52.779 45.653 78.293 119.851 55.68 149.12 42.581 4.608-33.109 17.92-55.68 32.597-68.48-113.664-12.928-233.216-56.832-233.216-252.672 0-55.808 19.968-101.547 52.693-137.387-5.291-12.928-22.827-64.981 4.992-135.509 0 0 42.923-13.739 140.629 52.523 40.789-11.349 84.565-17.024 128.128-17.237 43.52 0.213 87.296 5.888 128.171 17.237 97.664-66.261 140.501-52.523 140.501-52.523 27.947 70.528 10.411 122.581 5.12 135.509 32.811 35.84 52.608 81.579 52.608 137.387 0 196.608-119.765 239.573-233.792 252.288 18.432 15.872 34.901 47.232 34.901 95.147 0 68.693-0.64 124.032-0.64 140.928 0 13.696 9.301 29.611 35.2 24.576 203.307-67.371 349.867-259.157 349.867-485.333 0-282.752-229.077-512-512-512z"></path>
+<a href="https://github.com/qingqiu66/lizi" target="_blank" id="github-link" title="查看Github">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
     </svg>
 </a>
 
