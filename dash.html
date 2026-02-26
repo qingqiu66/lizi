@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
     <style>
-        /* === 布局框架 === */
+
         body {
             margin: 0; padding: 0;
             width: 100vw; height: 100vh;
@@ -48,7 +48,6 @@
             cursor: grab;
         }
 
-        /*   右侧主内容   */
         .main-wrapper {
             flex: 1;
             height: 100%;
@@ -60,16 +59,15 @@
 
         /* 页面容器 */
         .page {
-            display: none; /* 默认隐藏 */
+            display: none;
             flex-direction: column;
             height: 100%;
             padding: 30px;
             box-sizing: border-box;
-            overflow-y: auto; /* 页面内部允许滚动 */
+            overflow-y: auto; 
         }
-        .page.active { display: flex; } /* 激活时显示 */
+        .page.active { display: flex; }
 
-        /*   组件样式微调   */
         
         /* 状态卡片 */
         .status-card {
@@ -102,7 +100,7 @@
             overflow: hidden;
         }
         #editor-container {
-            flex: 1; /* 占满剩余空间 */
+            flex: 1; 
             border: 1px solid rgb(var(--mdui-color-outline));
             border-radius: 8px;
             margin-top: 10px;
@@ -131,10 +129,9 @@
 
     @media (max-width: 768px) {
         body {
-            flex-direction: column; /* 手机上改为上下排版 */
+            flex-direction: column; 
         }
-        
-        /* 侧边栏变顶部导航 */
+
         .sidebar {
             width: 100%;
             height: auto;
@@ -143,40 +140,35 @@
             z-index: 1000;
         }
 
-        /* 隐藏拖动把手 (手机不需要拖动窗口) */
         .drag-handle, .sidebar-header {
             display: none !important; 
         }
 
-        /* 菜单横向排列，允许滑动 */
         .sidebar mdui-list, .project-list {
             display: flex;
             flex-direction: row;
             overflow-x: auto;
             padding: 5px;
-            white-space: nowrap; /* 防止文字换行 */
+            white-space: nowrap; 
         }
 
         .sidebar mdui-list-item {
             margin: 0 5px;
-            flex-shrink: 0; /* 防止按钮被挤压 */
+            flex-shrink: 0; 
         }
 
-        /* 主内容区优化 */
         .main-wrapper, .editor-container {
-            padding: 15px; /* 减小手机上的内边距 */
+            padding: 15px; 
         }
 
         .page {
             padding: 15px;
         }
 
-        /* 对话框适配手机屏幕 */
         mdui-dialog {
             width: 95vw !important;
         }
         
-        /* 状态卡片内文字排版优化 */
         .status-card h2 {
             font-size: 1rem !important;
         }
@@ -303,7 +295,7 @@
 
         //   云端公告逻辑  
         async function fetchAnnouncement() {
-            const API_URL = "https://api.xn--c5w24w.cn/api.php?project=lizi"; 
+            const API_URL = "https://api.xn--c5w24w.cn/index.php?project=lizi"; 
             
             try {
                 const response = await fetch(API_URL);

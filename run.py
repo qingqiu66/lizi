@@ -151,4 +151,4 @@ if __name__ == '__main__':
         )
     gui_window.events.closed += api.quit_app
     
-    webview.start(debug=True)
+    webview.start(debug=False)
