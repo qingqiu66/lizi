@@ -6,19 +6,43 @@ import sys
 import threading
 import json
 import webbrowser
+import shutil 
 
 # ================= 配置 =================
 IS_FRAMELESS = True
 PORT = 8001
 # =======================================
 
-def get_resource_path(relative_path):
+# 1. 获取内部静态资源路径
+def get_asset_path(filename):
     if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
+        return os.path.join(sys._MEIPASS, filename)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_dir, filename)
 
-WORK_DIR = get_resource_path(".")
-os.chdir(WORK_DIR)
+# 2. 获取外部持久化数据路径
+def get_user_data_path():
+    if getattr(sys, 'frozen', False):
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        
+    lizi_dir = os.path.join(base_dir, 'lizi')
+    if not os.path.exists(lizi_dir):
+        os.makedirs(lizi_dir)
+        
+    return os.path.join(lizi_dir, 'index.html')
+
+#持久化数据
+USER_INDEX_PATH = get_user_data_path()
+
+if not os.path.exists(USER_INDEX_PATH):
+    bundled_index = get_asset_path('index.html')
+    if os.path.exists(bundled_index):
+        shutil.copy(bundled_index, USER_INDEX_PATH)
+
+os.chdir(os.path.dirname(USER_INDEX_PATH))
+
 gui_window = None
 
 class GuiLogHandler(http.server.SimpleHTTPRequestHandler):
@@ -75,7 +99,7 @@ class ThreadedServer:
 
 server_instance = ThreadedServer()
 
-#API
+# API
 class Api:
     def start_server(self):
         return server_instance.start()
@@ -85,43 +109,46 @@ class Api:
 
     def read_index(self):
         try:
-            with open('index.html', 'r', encoding='utf-8') as f:
+            with open(USER_INDEX_PATH, 'r', encoding='utf-8') as f:
                 return f.read()
         except Exception as e:
-            return f"Error: {e}"
+            return f"Error reading file: {e}"
 
     def save_index(self, content):
         try:
-            with open('index.html', 'w', encoding='utf-8') as f:
+            with open(USER_INDEX_PATH, 'w', encoding='utf-8') as f:
                 f.write(content)
             return True
         except Exception as e:
+            print(f"Save error: {e}")
             return False
-            
+
     def quit_app(self):
-        server_instance.stop()
-        if gui_window: gui_window.destroy()
-        # 强制退出，防止残留
+        print("正在安全关闭系统...")
+        try:
+            server_instance.stop()
+        except:
+            pass
         os._exit(0)
 
-    #打开浏览器
     def open_browser(self):
         webbrowser.open(f'http://localhost:{PORT}')
 
 if __name__ == '__main__':
     api = Api()
-    dashboard_path = os.path.join(WORK_DIR, 'dash.html')
-    
+    dashboard_path = get_asset_path('dash.html')
+        
     gui_window = webview.create_window(
-        title='Console',
+        title='控制台',
         url=f"file://{dashboard_path}",
         width=1200,
         height=800,
         js_api=api,
         frameless=IS_FRAMELESS,
-        easy_drag=False,
+        easy_drag=False,     
         background_color='#000000',
         text_select=True
-    )
+        )
+    gui_window.events.closed += api.quit_app
     
     webview.start(debug=True)

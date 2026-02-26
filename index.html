@@ -1,11 +1,14 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<head>
+    <meta charset="UTF-8">
     <title>赛博粒子</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #020202; font-family: "Microsoft YaHei", sans-serif; }
         
-        /* 弹窗样式：半透明毛玻璃 */
+        /* 弹窗样式 */
         #setup-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.8);
@@ -39,15 +42,15 @@
         }
         button#launch-btn:hover { filter: brightness(1.2); }
 
-        /* 左上角预览框 (修复层级问题) */
+        /* 左上角预览框 */
         #preview-container {
-            position: absolute; top: 20px; left: 20px; z-index: 100; /* 确保在粒子之上 */
+            position: absolute; top: 20px; left: 20px; z-index: 100; 
             width: 180px; height: 135px;
             border: 1px solid rgba(0, 243, 255, 0.3); 
             background: rgba(0, 0, 0, 0.8);
             border-radius: 8px; overflow: hidden;
             opacity: 0; transition: opacity 0.5s;
-            pointer-events: none; /* 让鼠标事件穿透，不挡住操作 */
+            pointer-events: none; 
         }
         #video-input { display: none; }
         #output-canvas { width: 100%; height: 100%; transform: scaleX(-1); }
@@ -76,6 +79,7 @@
             justify-content: center;
             align-items: center;
             background: rgba(0, 0, 0, 0.5);
+            -webkit-backdrop-filter: blur(8px);
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
@@ -98,6 +102,52 @@
         #github-link:hover svg {
             fill: #00f3ff;
         }
+        @media (max-width: 768px) {
+        body {
+            flex-direction: column; 
+        }
+        
+        .sidebar {
+            width: 100%;
+            height: auto;
+            border-right: none;
+            border-bottom: 1px solid rgb(var(--mdui-color-outline-variant));
+            z-index: 1000;
+        }
+
+        .drag-handle, .sidebar-header {
+            display: none !important; 
+        }
+
+        .sidebar mdui-list, .project-list {
+            display: flex;
+            flex-direction: row;
+            overflow-x: auto;
+            padding: 5px;
+            white-space: nowrap; 
+        }
+
+        .sidebar mdui-list-item {
+            margin: 0 5px;
+            flex-shrink: 0; 
+        }
+
+        .main-wrapper, .editor-container {
+            padding: 15px; 
+        }
+
+        .page {
+            padding: 15px;
+        }
+
+        mdui-dialog {
+            width: 95vw !important;
+        }
+        
+        .status-card h2 {
+            font-size: 1rem !important;
+        }
+    }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -120,7 +170,7 @@
         </div>
         <div class="input-group">
             <label>上传图片 (可选)</label>
-            <input type="file" id="user-image" accept="image/*" style="display:block; font-size:12px; color:#666">
+            <input type="file" id="user-image" accept="image/*" style="display:block; font-size:12px; color:#666" title="上传图片" placeholder="选择图片文件">
         </div>
         <button id="launch-btn">初始化</button>
     </div>
@@ -148,9 +198,8 @@
     import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
     import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-    // === 关键参数调整 ===
     const CONFIG = {
-        particleCount: 55000,   // 高密度
+        particleCount: 55000,  
         baseSize: 3.5,     
         bloomStrength: 1.3,    
         bloomThreshold: 0.2, 
@@ -191,7 +240,6 @@
         // 启动摄像头
         initCamera();
         
-        // 标记：如果摄像头一直没数据，3秒后才自动演示，避免抢夺控制权
         lastHandTime = performance.now(); 
     });
 
@@ -236,7 +284,11 @@
 
     // --- 2. 粒子生成  ---
     async function createParticles(text, imageSrc) {
-        if(points) { scene.remove(points); points.geometry.dispose(); }
+        if(points) { 
+            scene.remove(points); 
+            points.geometry.dispose(); 
+            points.material.dispose();
+        }
 
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -427,8 +479,12 @@
                 const lm = results.multiHandLandmarks[0];
                 
                 // 绘制骨骼 (青色连接线，红色关节)
-                if(window.drawConnectors) drawConnectors(ctx, lm, HAND_CONNECTIONS, {color: '#00f3ff', lineWidth: 2});
-                if(window.drawLandmarks) drawLandmarks(ctx, lm, {color: '#ff0055', lineWidth: 1});
+                if(window.drawConnectors && window.HAND_CONNECTIONS) {
+                    window.drawConnectors(ctx, lm, window.HAND_CONNECTIONS, {color: '#00f3ff', lineWidth: 2});
+                }
+                if(window.drawLandmarks) {
+                    window.drawLandmarks(ctx, lm, {color: '#ff0055', lineWidth: 1});
+                }
                 
                 // 计算比例：手指长度 / 手掌长度 (适应远近)
                 const wrist = lm[0];
